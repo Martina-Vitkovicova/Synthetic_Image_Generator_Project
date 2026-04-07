@@ -1,9 +1,9 @@
-from typing import Tuple, List, Optional
+from typing import Tuple, List
 
 import numpy as np
 from scipy.spatial import Voronoi
 
-from utils.type_definitions import IndexedRegion, Vertices, AllRidges, FloatPoint
+from utils.type_definitions import IndexedRegion, Vertices, AllRidges, FloatPoint, RandomState
 
 
 def _build_all_ridges(vor: Voronoi) -> AllRidges:
@@ -69,16 +69,19 @@ def _make_region_finite(p1: int, region: IndexedRegion, vor: Voronoi, radius: fl
     return sorted_region, new_vertices
 
 
-def get_finite_voronoi(vor: Voronoi, radius: Optional[float] = None) -> Tuple[List[IndexedRegion], Vertices]:
+def get_finite_voronoi(voronoi_regions_num_range: List[int], rng: RandomState, img_size: List[int])\
+        -> Tuple[List[IndexedRegion], Vertices]:
     """
     Reconstruct infinite Voronoi regions into finite polygons.
 
     Parameters
     ----------
-    vor : Voronoi
-        Input Voronoi diagram (2D).
-    radius : float, optional
-        Distance to 'points at infinity'.
+    voronoi_regions_num_range : int range
+        Range from which a number of Voronoi regions to generate will be chosen.
+    rng : RandomState
+        Random number generator for reproducibility.
+    img_size : int range
+        Size of the image as [width, height].
 
     Returns
     -------
@@ -87,11 +90,12 @@ def get_finite_voronoi(vor: Voronoi, radius: Optional[float] = None) -> Tuple[Li
     vertices : ndarray
         Coordinates of the finite Voronoi vertices.
     """
-    if vor.points.shape[1] != 2:
-        raise ValueError("Requires 2D input")
+    radius = 1000
+    width, height = img_size
 
-    if radius is None:
-        radius = 1000
+    num_points = rng.randint(*voronoi_regions_num_range)
+    region_generator_points = np.column_stack((rng.uniform(0, width, num_points), rng.uniform(0, height, num_points)))
+    vor = Voronoi(region_generator_points)
 
     new_regions = []
     new_vertices = vor.vertices.copy()
