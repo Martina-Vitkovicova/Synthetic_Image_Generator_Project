@@ -15,9 +15,7 @@ def generate_image(root_seed: int, img_params_path: str) -> Tuple[Image, Mask]:
     """
     Generate a single synthetic image and precipitate mask from a config file.
 
-    The pipeline applies matrix generation, etch pits, precipitates, configured
-    imaging effects, and a final small Gaussian noise term. Randomness is fully
-    determined by `root_seed`.
+    The pipeline applies matrix generation, precipitates and noise terms. Randomness is fully determined by `root_seed`.
     """
     rng = np.random.RandomState(root_seed)
     vor_seed = rng.randint(0, 10 ** 5)
@@ -49,7 +47,7 @@ def save_images(root_path: Path, seed: int, img: Image, mask: Mask, img_params_p
         save_metadata(img_params_path, seed, gen, path)
 
 
-def save_metadata(img_params_path, seed, gen, path):
+def save_metadata(img_params_path: str | Path, seed: int, gen: str, path: str | Path):
     with open(img_params_path, "r") as file:
         img_params = json.load(file)
 
@@ -67,5 +65,5 @@ def add_gaussian_noise(image: Image, seed: int) -> Image:
     noise = rng.normal(0.0, 1.0, (h, w)).astype(np.float32)
     noise -= float(noise.mean())
 
-    alpha = float(rng.randint(1, 3)) * 0.01
+    alpha = float(rng.randint(2, 4)) * 0.01
     return image + noise * (alpha * 127.5)
