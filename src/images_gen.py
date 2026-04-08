@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from src.background_gen import generate_matrix
+from src.etch_pits_gen import add_etch_pits
 from src.precipitates_gen import add_precipitates
 from utils.type_definitions import Image, Mask
 
@@ -21,12 +22,14 @@ def generate_image(root_seed: int, img_params_path: str) -> Tuple[Image, Mask]:
     vor_seed = rng.randint(0, 10 ** 5)
     precip_seed = rng.randint(0, 10 ** 5)
     noise_seed = rng.randint(0, 10 ** 5)
+    etch_pits_seed = rng.randint(0, 10 ** 5)
 
     with open(img_params_path, "r") as file:
         img_params = json.load(file)
 
     background = generate_matrix(vor_seed, **img_params)
-    image, mask = add_precipitates(background, precip_seed, **img_params)
+    image = add_etch_pits(background, etch_pits_seed, **img_params)
+    image, mask = add_precipitates(image, precip_seed, **img_params)
 
     image = add_gaussian_noise(image, noise_seed)
     image = np.clip(image, 0.0, 255.0)

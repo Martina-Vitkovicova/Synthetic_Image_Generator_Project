@@ -13,10 +13,10 @@ from utils.type_definitions import (Image, IndexedRegion, Vertices, Edge, Point,
                                     GradientImage)
 
 
-def generate_matrix(seed: int, *, img_size: List[int], voronoi_regions_num_range: List[int],
+def generate_matrix(seed: int, *, img_size: List[int], light_direction: List[int], voronoi_regions_num_range: List[int],
                     voronoi_color_range: List[int], voronoi_border_width: int, voronoi_border_jaggedness: float,
-                    voronoi_border_noise: float, voronoi_border_3d: bool, voronoi_light_direction: List[int],
-                    voronoi_shading_color_range: List[int], voronoi_perlin_noise: List[int], **kwargs) -> Image:
+                    voronoi_border_noise: float, voronoi_border_3d: bool, voronoi_shading_color_range: List[int],
+                    voronoi_perlin_noise: List[int], **kwargs) -> Image:
     """
     Generate a synthetic grayscale image representing grain-like metal matrix background using Voronoi tessellation.
 
@@ -66,7 +66,7 @@ def generate_matrix(seed: int, *, img_size: List[int], voronoi_regions_num_range
         image[row, col] = color
 
         image = improve_borders(image, y_coords, x_coords, voronoi_border_width, rng, color, voronoi_border_3d,
-                                voronoi_light_direction, voronoi_shading_color_range)
+                                light_direction, voronoi_shading_color_range)
         image = add_perlin_noise(image, rng, row, col, voronoi_perlin_noise)
 
     return image
