@@ -26,6 +26,8 @@ def generate_matrix(seed: int, *, img_size: List[int], light_direction: List[int
         Random seed for reproducibility.
     img_size : list of int
         Dimensions of the image as [width, height].
+    light_direction : list of int
+        Direction of the light source for 3D shading as triplet [x, y, z].
     voronoi_regions_num_range : list of int
         Range for the number of Voronoi regions in the image.
     voronoi_color_range : list of int
@@ -38,8 +40,6 @@ def generate_matrix(seed: int, *, img_size: List[int], light_direction: List[int
         Noise level for border distortion, usually in range [0, 1].
     voronoi_border_3d : bool
         Whether to apply 3D shading to borders.
-    voronoi_light_direction : list of int
-        Direction of the light source for 3D shading as triplet [x, y, z].
     voronoi_shading_color_range : list of int
         Grayscale range used for the border shading effect.
     voronoi_perlin_noise : list of int
@@ -86,8 +86,7 @@ def distort_borders(regions: List[IndexedRegion], vertices: Vertices, width: int
             if sorted_edge not in modified_borders:
                 edge_seed = _get_edge_seed(sorted_edge)
                 edge_rng = np.random.RandomState(edge_seed)
-                v1, v2 = vertices[sorted_edge[0]], vertices[sorted_edge[1]]
-                v1, v2 = tuple(map(int, v1)), tuple(map(int, v2))
+                v1, v2 = (tuple(int(point) for point in vertices[i]) for i in sorted_edge)
                 modified_borders[sorted_edge] = divide_edge(v1, v2, edge_rng, width, height, voronoi_border_jaggedness,
                                                             voronoi_border_noise)
 

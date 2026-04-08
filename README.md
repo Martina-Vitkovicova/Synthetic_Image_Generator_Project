@@ -35,6 +35,13 @@ Precipitates are generated as small dark irregular objects with configurable:
 - intensity
 - local shading
 
+### Etch Pits
+Etch pits are generated as recessed elliptical features with configurable:
+- number
+- size range
+- intensity range
+- shading
+
 ## Typical Use
 1. Edit a configuration file
 2. Generate a dataset
