@@ -10,6 +10,7 @@ from utils.type_definitions import Image, Color, Point, RandomState, Mask, Conto
 
 def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color, precipitate_num_range: List[int],
                      precipitate_size_range: List[int], precipitate_sizes_distribution: List[int],
+                     precipitate_emboss: bool,
                      precipitate_shading_color_range: List[int], **kwargs) -> Tuple[Image, Mask]:
     """
     Add synthetic precipitates to the image and return the updated image together with a precipitate mask.
@@ -28,6 +29,8 @@ def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color,
         Minimum and maximum precipitate size used when sampling precipitate radii.
     precipitate_sizes_distribution : list[int]
         Relative frequency distribution used to bias the sampling of precipitate sizes across the specified size range.
+    precipitate_emboss : bool
+        Whether to apply local emboss-like shading to each precipitate.
     precipitate_shading_color_range : list[int]
         Grayscale range used to scale the local shading applied to each precipitate.
 
@@ -36,6 +39,7 @@ def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color,
     tuple[Image, Mask]
     """
     rng = np.random.RandomState(seed)
+    emboss_rng = np.random.RandomState(seed + 1)
     mask = np.zeros(image.shape)
     precip_num = rng.randint(*precipitate_num_range)
     mask_color = (255, 255, 255)
@@ -49,7 +53,8 @@ def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color,
         cv2.fillPoly(image, [contour], color)
         cv2.fillPoly(mask, [contour], mask_color)
         cv2.fillPoly(temp_mask, [contour], mask_color)
-        image = add_individual_emboss(temp_mask, image, radius, rng, precipitate_shading_color_range)
+        if precipitate_emboss:
+            image = add_individual_emboss(temp_mask, image, radius, emboss_rng, precipitate_shading_color_range)
 
     image = add_feather_effect(image, mask)
 
@@ -60,8 +65,8 @@ def generate_precipitate_contour(image: Image, radius: int, rng: RandomState) ->
     """Generate a smooth irregular closed contour for a single precipitate."""
     center = (rng.randint(0, image.shape[1]), rng.randint(0, image.shape[0]))
 
-    num_segments = min(20, max(8, int(radius ** 0.5)))
-    radius_variation = radius ** (1 / 3)
+    num_segments = min(25, max(8, int(radius ** 0.5)))
+    radius_variation = radius ** 0.5
 
     x, y = generate_shape_coords(num_segments, radius, radius_variation, center, rng)
     contour = np.vstack((x, y)).T.reshape((-1, 1, 2))

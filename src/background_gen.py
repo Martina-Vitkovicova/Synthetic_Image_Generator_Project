@@ -116,9 +116,15 @@ def divide_edge(start: Point, end: Point, rng: RandomState, width: int, height: 
     line_length = np.linalg.norm(np.array(new_end) - np.array(new_start))
     base_segments = max(2, int(np.sqrt(line_length) * voronoi_border_jaggedness))
     # changes in x, y coords to make the border jagged
-    noise_level = max(3, min(15, int(np.sqrt(line_length) * voronoi_border_noise) + rng.randint(-2, 2)))
+    if voronoi_border_noise > 0:
+        noise_level = max(3, min(15, int(np.sqrt(line_length) * voronoi_border_noise) + rng.randint(-2, 2)))
+    else:
+        noise_level = 0
     # to how many segments will the line be divided
-    num_segments = max(3, min(15, base_segments + rng.randint(-base_segments // 2, base_segments // 2)))
+    if voronoi_border_jaggedness > 0:
+        num_segments = max(3, min(15, base_segments + rng.randint(-base_segments // 2, base_segments // 2)))
+    else:
+        num_segments = 0
     # no need to add randomness to the spacing because noise creates the randomness
     points = np.linspace(new_start, new_end, num_segments + 1)
 
