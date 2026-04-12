@@ -11,6 +11,7 @@ from perlin_numpy import generate_perlin_noise_2d
 from src.finite_voronoi_gen import get_finite_voronoi
 from utils.type_definitions import (Image, IndexedRegion, Vertices, Edge, Point, RandomState, Coords, BorderMask,
                                     GradientImage)
+from utils.light_normalisation import normalise_light_direction
 
 
 def generate_matrix(seed: int, *, img_size: List[int], light_direction: List[int], voronoi_regions_num_range: List[int],
@@ -177,15 +178,14 @@ def compute_3d_border_effect(border_mask: BorderMask, rng: RandomState, voronoi_
     """ Compute borders colors to make it look like 3D edges. """
 
     height_map = get_height_map(border_mask, 2)
-    dx, dy = np.gradient(height_map)
+    gy, gx = np.gradient(height_map)
     # dz points perpendicularly away from the surface
     dz = np.ones_like(height_map)
-    normals = np.dstack((-dx, -dy, dz))
+    normals = np.dstack((-gx, -gy, dz))
     norm = np.linalg.norm(normals, axis=2, keepdims=True)
     normals /= norm + 1e-8  # avoid division by zero
 
-    light_dir = np.array(voronoi_light_direction)
-    light_dir = light_dir / np.linalg.norm(light_dir)
+    light_dir = normalise_light_direction(voronoi_light_direction)
 
     # transform the color to specified values range
     gradient_shading = np.dot(normals, light_dir).astype(np.float32)

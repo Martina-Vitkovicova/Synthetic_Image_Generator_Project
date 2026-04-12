@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 
 from utils.type_definitions import Image, Point, RandomState, Contour
+from utils.light_normalisation import normalise_light_direction
 
 
 def add_etch_pits(image: Image, seed: int, *, etch_pits_num_range: List[int],
@@ -51,7 +52,7 @@ def add_etch_pits(image: Image, seed: int, *, etch_pits_num_range: List[int],
         centers = generate_centers(rng, pad_w, pad_h, light_direction, size)
         colors = [light, dark_shadow, light_shadow, base_color]
 
-        pad_image = add_colored_shapes(pad_image, rng, centers, size, angle, colors)
+        pad_image = add_colored_shapes(pad_image, rng, centers, size, angle, colors, light_direction)
 
     # crop back to original size
     image = pad_image[pad:pad + h, pad:pad + w]
@@ -62,17 +63,20 @@ def generate_centers(rng: RandomState, w: int, h: int, light_dir: List[int], siz
     """Generate shifted centers for the shaded components of a single etch pit."""
     center_x, center_y = rng.randint(0, w), rng.randint(0, h)
 
-    # normalise light direction
-    light_x, light_y, _ = light_dir
-    light_vec = np.array([light_x, light_y], dtype=np.float32)
-    norm = np.linalg.norm(light_vec) + 1e-6
-    light_vec /= norm
+    light_vec_3d = normalise_light_direction(light_dir)
+    light_vec_2d = light_vec_3d[:2]
+
+    norm_xy = np.linalg.norm(light_vec_2d)
+    if norm_xy < 1e-8:
+        light_vec_2d = np.array([1.0, 0.0], dtype=np.float32)
+    else:
+        light_vec_2d /= norm_xy
 
     step = 0.25 * min(size)
-    step_vec = step * light_vec
+    step_vec = step * light_vec_2d
 
-    # Offsets along the light direction (<0 means towards the light source).
-    offsets = [0.0, -1.1, 0.0, 0.75]
+    # base, shadow toward light, inner at base, bright opposite light
+    offsets = [0.0, 1.1, 0.0, -0.75]
 
     centers = []
     for k in offsets:
@@ -91,11 +95,11 @@ def _generate_pit_size(rng: RandomState, etch_pits_size_range: List[int]) -> Tup
 
 
 def add_colored_shapes(image: Image, rng: RandomState, centers: List[Point], size: Tuple[int, int],
-                       angle: int, colors: List[int]) -> Image:
+                       angle: int, colors: List[int], light_dir: List[int]) -> Image:
     """Draw and blend the shading shape layers forming one etch pit."""
     temp_image = np.zeros_like(image, dtype=np.uint8)
 
-    scales = [1.0, 0.85, 0.76, 0.7]
+    scales = compute_shapes_scales(light_dir)
     base_center = centers[0]
     base_contour = create_pit_shape(image, base_center, angle, size, scales[0], rng)
 
@@ -116,6 +120,16 @@ def add_colored_shapes(image: Image, rng: RandomState, centers: List[Point], siz
     result = merge_pit_into_image(image, blurred, mask, size)
 
     return result
+
+
+def compute_shapes_scales(light_dir: List[int]) -> List[float]:
+    light_vec = normalise_light_direction(light_dir)
+    lz = abs(float(light_vec[2]))
+
+    z_gain = 0.20
+    growth = 1.0 + z_gain * lz
+
+    return [1.00 * growth, 0.85 * growth, 0.76 * growth, 0.70 * growth]
 
 
 def create_pit_shape(image: Image, center: Point, angle: int, size: Tuple[int, int], scale: float, rng: RandomState)\

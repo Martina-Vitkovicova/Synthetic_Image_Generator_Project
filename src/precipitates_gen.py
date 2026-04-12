@@ -6,9 +6,11 @@ from numpy.typing import NDArray
 from scipy.interpolate import splprep, splev
 
 from utils.type_definitions import Image, Color, Point, RandomState, Mask, Contour, Coords
+from utils.light_normalisation import normalise_light_direction
 
 
-def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color, precipitate_num_range: List[int],
+def add_precipitates(image: Image, seed: int, *, light_direction: List[int], precipitate_color_range: Color,
+                     precipitate_num_range: List[int],
                      precipitate_size_range: List[int], precipitate_sizes_distribution: List[int],
                      precipitate_emboss: bool,
                      precipitate_shading_color_range: List[int], **kwargs) -> Tuple[Image, Mask]:
@@ -54,7 +56,8 @@ def add_precipitates(image: Image, seed: int, *, precipitate_color_range: Color,
         cv2.fillPoly(mask, [contour], mask_color)
         cv2.fillPoly(temp_mask, [contour], mask_color)
         if precipitate_emboss:
-            image = add_individual_emboss(temp_mask, image, radius, emboss_rng, precipitate_shading_color_range)
+            image = add_individual_emboss(temp_mask, image, radius, emboss_rng, precipitate_shading_color_range,
+                                          light_direction)
 
     image = add_feather_effect(image, mask)
 
@@ -100,11 +103,11 @@ def generate_shape_coords(num_points: int, radius: int, radius_variation: float,
 
 
 def add_individual_emboss(temp_mask: Mask, image: Image, radius: int, rng: RandomState,
-                          precipitate_shading_color_range: List[int]) -> Image:
+                          precipitate_shading_color_range: List[int], light_direction: List[int]) -> Image:
     """Apply local emboss-like shading to a single precipitate region."""
     effect_size = compute_emboss_size(radius, rng)
 
-    shading, shading_mask = compute_gradient_shading(temp_mask, effect_size, precipitate_shading_color_range)
+    shading, shading_mask = compute_gradient_shading(temp_mask, effect_size, precipitate_shading_color_range, light_direction)
 
     blurred_border = cv2.GaussianBlur(shading_mask.astype(float), (effect_size, effect_size), sigmaX=0)
     shading_strength = rng.randint(80, 225)
@@ -117,19 +120,15 @@ def add_individual_emboss(temp_mask: Mask, image: Image, radius: int, rng: Rando
     return image
 
 
-def compute_gradient_shading(temp_mask: Mask, size: int, precipitate_shading_color_range: List[int])\
-        -> Tuple[Image, Mask]:
+def compute_gradient_shading(temp_mask: Mask, size: int, precipitate_shading_color_range: List[int],
+                             light_direction: List[int]) -> Tuple[Image, Mask]:
     """Compute directional shading and its binary mask for a single precipitate."""
-    erosion = int(size // 4)
+    erosion = max(1, int(size / 4))
     temp_mask = cv2.erode(temp_mask, np.ones((erosion, erosion), np.uint8), iterations=1)
-    elevation = np.pi / 2.5  # radians
-    azimuth = np.pi / 2.2  # where is the light source
-    depth = 20  # how high is the light source - changes the light strength
 
-    # Compute unit incident light direction
-    gd = np.cos(elevation)
-    light_dir = np.array([gd * np.cos(azimuth), gd * np.sin(azimuth), np.sin(elevation)])
+    light_dir = normalise_light_direction(light_direction)
 
+    depth = 20
     unit_normals = _get_unit_normals(temp_mask, size, depth)
 
     # Compute shading using dot product
@@ -156,11 +155,11 @@ def _remove_shading_background(shading: Image) -> Image:
 def _get_unit_normals(temp_mask: Mask, size: int, depth: int) -> NDArray[np.float32]:
     # blur the mask to increase the gradient area
     temp_mask_blurred = cv2.GaussianBlur(temp_mask, (size, size), 2.0)
-    grad_x, grad_y = np.gradient(temp_mask_blurred)
-    grad_x, grad_y = grad_x * depth / 100, grad_y * depth / 100
+    g_y, g_x = np.gradient(temp_mask_blurred)
+    g_x, g_y = g_x * depth / 100, g_y * depth / 100
 
-    grad_magnitude = np.sqrt(grad_x ** 2 + grad_y ** 2 + 1.0)
-    unit_normals = np.stack((grad_x / grad_magnitude, grad_y / grad_magnitude, 1.0 / grad_magnitude), axis=0)
+    magnitude = np.sqrt(g_x ** 2 + g_y ** 2 + 1.0)
+    unit_normals = np.stack((-g_x / magnitude, -g_y / magnitude, 1.0 / magnitude), axis=0).astype(np.float32)
 
     return unit_normals
 
