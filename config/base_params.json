@@ -1,25 +1,25 @@
 {
   "img_size": [1024, 1024],
-  "light_direction": [-1, 2, 4],
+  "light_direction": [1, 2, 4],
 
-  "precipitate_num_range": [100, 150],
-  "precipitate_color_range": [15, 35],
-  "precipitate_size_range": [2, 30],
-  "precipitate_sizes_distribution": [2200, 30, 25, 15, 10, 6, 3, 1],
+  "precipitate_num_range": [150, 250],
+  "precipitate_color_range": [10, 35],
+  "precipitate_size_range": [1, 35],
+  "precipitate_sizes_distribution": [4000, 55, 40, 30, 15, 10, 5],
   "precipitate_emboss": true,
-  "precipitate_shading_color_range": [0, 255],
+  "precipitate_shading_color_range": [10, 225],
 
-  "voronoi_regions_num_range": [30, 45],
-  "voronoi_color_range": [120, 150],
-  "voronoi_border_width": 6,
+  "voronoi_regions_num_range": [30, 55],
+  "voronoi_color_range": [110, 150],
+  "voronoi_border_width": 4,
   "voronoi_border_jaggedness": 0.3,
   "voronoi_border_noise": 0.4,
   "voronoi_border_3d": true,
-  "voronoi_shading_color_range": [80, 180],
+  "voronoi_shading_color_range": [75, 185],
   "voronoi_perlin_noise": [2, 7],
 
-  "etch_pits_num_range": [1, 5],
-  "etch_pits_color_range": [100, 120],
-  "etch_pits_size_range": [5, 20],
-  "etch_pits_shading_values": [20, 60, 210]
+  "etch_pits_num_range": [1, 6],
+  "etch_pits_color_range": [100, 135],
+  "etch_pits_size_range": [5, 12],
+  "etch_pits_shading_values": [10, 60, 190]
 }
