@@ -128,7 +128,7 @@ def compute_gradient_shading(temp_mask: Mask, size: int, precipitate_shading_col
 
     light_dir = normalise_light_direction(light_direction)
 
-    depth = 20
+    depth = 40
     unit_normals = _get_unit_normals(temp_mask, size, depth)
 
     # Compute shading using dot product

@@ -126,8 +126,8 @@ def compute_shapes_scales(light_dir: List[int]) -> List[float]:
     light_vec = normalise_light_direction(light_dir)
     lz = abs(float(light_vec[2]))
 
-    z_gain = 0.20
-    growth = 1.0 + z_gain * lz
+    z_gain = 0.40
+    growth = 1.0 + z_gain * (1 / lz)
 
     return [1.00 * growth, 0.85 * growth, 0.76 * growth, 0.70 * growth]
 
