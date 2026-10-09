@@ -13,7 +13,7 @@ The generator simulates several features commonly found in metallic microstructu
   <img
     src="images/table_features.png"
     alt="Annotated synthetic microstructure showing the matrix, grain boundaries, precipitates and etch pits"
-    width="750"
+    width="650"
   >
 </p>
 
